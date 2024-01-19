@@ -79,7 +79,7 @@ public class PullRequestInBuildAgentTest
         var env = new Dictionary<string, string>
         {
             { GitLabCi.EnvironmentVariableName, "true" },
-            { "CI_COMMIT_REF_NAME", PullRequestBranchName }
+            { "CI_COMMIT_BRANCH", "" }
         };
         await VerifyPullRequestVersionIsCalculatedProperly(pullRequestRef, env);
     }

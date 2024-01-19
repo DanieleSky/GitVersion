@@ -32,6 +32,19 @@ public class TagCheckoutInBuildAgentTests
         await VerifyTagCheckoutVersionIsCalculatedProperly(env);
     }
 
+    [Test]
+    public async Task VerifyTagCheckoutOnGitLabCIActions()
+    {
+        var env = new Dictionary<string, string>
+        {
+            { GitLabCi.EnvironmentVariableName, "true" },
+            { "CI_COMMIT_BRANCH", "" }
+        };
+
+        await VerifyTagCheckoutVersionIsCalculatedProperly(env);
+    }
+
+
     private static async Task VerifyTagCheckoutVersionIsCalculatedProperly(Dictionary<string, string> env)
     {
         using var fixture = new EmptyRepositoryFixture("main");
