@@ -31,13 +31,22 @@ found that is generally what is needed when using GitFlow.
 To see the effective configuration (defaults and overrides), you can run
 `gitversion /showConfig`.
 
-To create your config file just type `gitversion init` in your repo directory,
-after [installing][installing]. A minimal `GitVersion.yml` configuration file will be
-created. Modify this to suit your needs.
 
 ## Global configuration
 
-The global configuration looks like this:
+The following supported workflow configurations are available in GitVersion and can be referenced by the workflow property:
+-   GitFlow (GitFlow/v1)
+-   GitHubFlow (GitHubFlow/v1)
+-   TrunkBased (TrunkBased/v1)
+
+Example of using a `TrunkBased` workflow with a different `tag-prefix`:
+
+```yaml
+workflow: TrunkBased/v1
+tag-prefix: '[abc]'
+```
+
+The built-in configuration for the `GitFlow` workflow (`workflow: GitFlow/v1`) looks like:
 
 ```yaml
 assembly-versioning-scheme: MajorMinorPatch
@@ -53,24 +62,31 @@ commit-date-format: yyyy-MM-dd
 merge-message-formats: {}
 update-build-number: true
 semantic-version-format: Strict
+strategies:
+- ConfiguredNextVersion
+- MergeMessage
+- TaggedCommit
+- TrackReleaseBranches
+- VersionInBranchName
 branches:
   develop:
-    mode: ContinuousDeployment
     label: alpha
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      when-current-commit-tagged: false
     track-merge-target: true
     regex: ^dev(elop)?(ment)?$
     source-branches: []
     is-source-branch-for: []
     tracks-release-branches: true
     is-release-branch: false
-    is-mainline: false
+    is-main-branch: false
     pre-release-weight: 0
   main:
     label: ''
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
+    prevent-increment:
+      of-merged-branch: true
     track-merge-target: false
     regex: ^master$|^main$
     source-branches:
@@ -79,12 +95,15 @@ branches:
     is-source-branch-for: []
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: true
+    is-main-branch: true
     pre-release-weight: 55000
   release:
+    mode: ManualDeployment
     label: beta
     increment: None
-    prevent-increment-of-merged-branch-version: true
+    prevent-increment:
+      of-merged-branch: true
+      when-current-commit-tagged: false
     track-merge-target: false
     regex: ^releases?[/-]
     source-branches:
@@ -95,13 +114,14 @@ branches:
     is-source-branch-for: []
     tracks-release-branches: false
     is-release-branch: true
-    is-mainline: false
+    is-main-branch: false
     pre-release-weight: 30000
   feature:
-    mode: ContinuousDelivery
+    mode: ManualDeployment
     label: '{BranchName}'
     increment: Inherit
-    regex: ^features?[/-]
+    prevent-increment: {}
+    regex: ^features?[/-](?<BranchName>.+)
     source-branches:
     - develop
     - main
@@ -115,6 +135,7 @@ branches:
     mode: ContinuousDelivery
     label: PullRequest
     increment: Inherit
+    prevent-increment: {}
     label-number-pattern: '[/-](?<number>\d+)'
     regex: ^(pull|pull\-requests|pr)[/-]
     source-branches:
@@ -127,9 +148,11 @@ branches:
     is-source-branch-for: []
     pre-release-weight: 30000
   hotfix:
-    mode: ContinuousDelivery
+    mode: ManualDeployment
     label: beta
     increment: Inherit
+    prevent-increment:
+      when-current-commit-tagged: false
     regex: ^hotfix(es)?[/-]
     source-branches:
     - release
@@ -142,7 +165,8 @@ branches:
   support:
     label: ''
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
+    prevent-increment:
+      of-merged-branch: true
     track-merge-target: false
     regex: ^support[/-]
     source-branches:
@@ -150,13 +174,14 @@ branches:
     is-source-branch-for: []
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: true
+    is-main-branch: true
     pre-release-weight: 55000
   unknown:
-    mode: ContinuousDelivery
+    mode: ManualDeployment
     label: '{BranchName}'
     increment: Inherit
-    regex: .*
+    prevent-increment: {}
+    regex: (?<BranchName>.+)
     source-branches:
     - main
     - develop
@@ -171,7 +196,10 @@ ignore:
 mode: ContinuousDelivery
 label: '{BranchName}'
 increment: Inherit
-prevent-increment-of-merged-branch-version: false
+prevent-increment:
+  of-merged-branch: false
+  when-branch-merged: false
+  when-current-commit-tagged: true
 track-merge-target: false
 track-merge-message: true
 commit-message-incrementing: Enabled
@@ -180,14 +208,208 @@ source-branches: []
 is-source-branch-for: []
 tracks-release-branches: false
 is-release-branch: false
-is-mainline: false
+is-main-branch: false
+
+```
+
+The supported built-in configuration for the `GitHubFlow` workflow (`workflow: GitHubFlow/v1`) looks like:
+
+```yaml
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
+tag-prefix: '[vV]?'
+version-in-branch-pattern: (?<version>[vV]?\d+(\.\d+)?(\.\d+)?).*
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+no-bump-message: '\+semver:\s?(none|skip)'
+tag-pre-release-weight: 60000
+commit-date-format: yyyy-MM-dd
+merge-message-formats: {}
+update-build-number: true
+semantic-version-format: Strict
+strategies:
+- ConfiguredNextVersion
+- MergeMessage
+- TaggedCommit
+- TrackReleaseBranches
+- VersionInBranchName
+branches:
+  main:
+    label: ''
+    increment: Patch
+    prevent-increment:
+      of-merged-branch: true
+    track-merge-target: false
+    regex: ^master$|^main$
+    source-branches:
+    - release
+    is-source-branch-for: []
+    tracks-release-branches: false
+    is-release-branch: false
+    is-main-branch: true
+    pre-release-weight: 55000
+  release:
+    mode: ManualDeployment
+    label: beta
+    increment: None
+    prevent-increment:
+      of-merged-branch: true
+      when-current-commit-tagged: false
+    track-merge-target: false
+    regex: ^releases?[/-]
+    source-branches:
+    - main
+    - release
+    is-source-branch-for: []
+    tracks-release-branches: false
+    is-release-branch: true
+    is-main-branch: false
+    pre-release-weight: 30000
+  feature:
+    mode: ManualDeployment
+    label: '{BranchName}'
+    increment: Inherit
+    regex: ^features?[/-](?<BranchName>.+)
+    source-branches:
+    - main
+    - release
+    - feature
+    is-source-branch-for: []
+    pre-release-weight: 30000
+  pull-request:
+    mode: ContinuousDelivery
+    label: PullRequest
+    increment: Inherit
+    label-number-pattern: '[/-](?<number>\d+)'
+    regex: ^(pull|pull\-requests|pr)[/-]
+    source-branches:
+    - main
+    - release
+    - feature
+    is-source-branch-for: []
+    pre-release-weight: 30000
+  unknown:
+    mode: ManualDeployment
+    label: '{BranchName}'
+    increment: Inherit
+    regex: (?<BranchName>.+)
+    source-branches:
+    - main
+    - release
+    - feature
+    - pull-request
+    is-source-branch-for: []
+ignore:
+  sha: []
+mode: ContinuousDelivery
+label: '{BranchName}'
+increment: Inherit
+prevent-increment:
+  of-merged-branch: false
+  when-branch-merged: false
+  when-current-commit-tagged: true
+track-merge-target: false
+track-merge-message: true
+commit-message-incrementing: Enabled
+regex: ''
+source-branches: []
+is-source-branch-for: []
+tracks-release-branches: false
+is-release-branch: false
+is-main-branch: false
+```
+
+The supported built-in configuration for the `TrunkBased` workflow (`workflow: TrunkBased/v1`) looks like:
+
+```yaml
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
+tag-prefix: '[vV]?'
+version-in-branch-pattern: (?<version>[vV]?\d+(\.\d+)?(\.\d+)?).*
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+no-bump-message: '\+semver:\s?(none|skip)'
+tag-pre-release-weight: 60000
+commit-date-format: yyyy-MM-dd
+merge-message-formats: {}
+update-build-number: true
+semantic-version-format: Strict
+strategies:
+- TrunkBased
+- ConfiguredNextVersion
+branches:
+  main:
+    mode: ContinuousDeployment
+    label: ''
+    increment: Patch
+    prevent-increment:
+      of-merged-branch: true
+    track-merge-target: false
+    regex: ^master$|^main$
+    source-branches: []
+    tracks-release-branches: false
+    is-release-branch: false
+    is-main-branch: true
+    pre-release-weight: 55000
+  feature:
+    increment: Minor
+    regex: ^features?[/-](?<BranchName>.+)
+    prevent-increment:
+      when-current-commit-tagged: false
+    source-branches:
+    - main
+    pre-release-weight: 30000
+  hotfix:
+    increment: Patch
+    regex: ^hotfix(es)?[/-](?<BranchName>.+)
+    prevent-increment:
+      when-current-commit-tagged: false
+    source-branches:
+    - main
+    pre-release-weight: 30000
+  pull-request:
+    mode: ManualDeployment
+    label: PullRequest
+    increment: Inherit
+    label-number-pattern: '[/-](?<number>\d+)'
+    regex: ^(pull|pull\-requests|pr)[/-]
+    source-branches:
+    - main
+    pre-release-weight: 30000
+  unknown:
+    mode: ManualDeployment
+    increment: Inherit
+    regex: (?<BranchName>.+)
+    source-branches:
+    - main
+    - release
+    - feature
+    - pull-request
+ignore:
+  sha: []
+mode: ManualDeployment
+label: '{BranchName}'
+increment: Inherit
+prevent-increment:
+  of-merged-branch: false
+  when-branch-merged: false
+  when-current-commit-tagged: true
+track-merge-target: false
+track-merge-message: true
+commit-message-incrementing: Enabled
+regex: ''
+tracks-release-branches: false
+is-release-branch: false
+is-main-branch: false
 ```
 
 The details of the available options are as follows:
 
 ### workflow
 
-The base template of the configuration to use. Possible values are: GitFlow/v1 or GitHubFlow/v1
+The base template of the configuration to use. Possible values are: GitFlow/v1 or GitHubFlow/v1 or TrunkBased/v1. Defaults to GitFlow/v1 if not set.
 
 ### next-version
 
@@ -255,7 +477,7 @@ The default value is `{InformationalVersion}`.
 ### mode
 
 Sets the `mode` of how GitVersion should create a new version. Read more at
-[versioning modes][modes].
+[deployment modes][modes].
 
 ### increment
 
@@ -264,9 +486,7 @@ increased, such as for commits after a tag: `Major`, `Minor`, `Patch`, `None`.
 
 The special value `Inherit` means that GitVersion should find the parent branch
 (i.e. the branch where the current branch was branched from), and use its values
-for [increment](#increment),
-[prevent-increment-of-merged-branch-version](#prevent-increment-of-merged-branch-version)
-and [tracks-release-branches](#tracks-release-branches).
+for [increment](#increment) or other branch related properties.
 
 ### tag-prefix
 
@@ -413,7 +633,7 @@ branches:
     source-branches: [ 'develop', 'release' ]
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: true
+    is-main-branch: true
     pre-release-weight: 55000
   develop:
     regex: ^dev(elop)?(ment)?$
@@ -425,7 +645,7 @@ branches:
     source-branches: []
     tracks-release-branches: true
     is-release-branch: false
-    is-mainline: false
+    is-main-branch: false
     pre-release-weight: 0
   release:
     regex: ^releases?[/-]
@@ -437,7 +657,7 @@ branches:
     source-branches: [ 'develop', 'main', 'support', 'release' ]
     tracks-release-branches: false
     is-release-branch: true
-    is-mainline: false
+    is-main-branch: false
     pre-release-weight: 30000
   feature:
     regex: ^features?[/-]
@@ -471,7 +691,7 @@ branches:
     source-branches: [ 'main' ]
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: true
+    is-main-branch: true
     pre-release-weight: 55000
 ```
 
@@ -588,7 +808,9 @@ Another example: branch `features/sc-12345/some-description` would become a pre-
 
 Same as for the [global configuration, explained above](#increment).
 
-### prevent-increment-of-merged-branch-version
+### prevent-increment-of-merged-branch
+
+The increment of the branch merged to will be ignored, regardless of whether the merged branch has a version number or not, when this branch related property is set to true on the target branch.
 
 When `release-2.0.0` is merged into main, we want main to build `2.0.0`. If
 `release-2.0.0` is merged into develop we want it to build `2.1.0`, this option
@@ -598,6 +820,14 @@ In a GitFlow-based repository, setting this option can have implications on the
 `CommitsSinceVersionSource` output variable. It can rule out a potentially
 better version source proposed by the `MergeMessageBaseVersionStrategy`. For
 more details and an in-depth analysis, please see [the discussion][2506].
+
+### prevent-increment-when-branch-merged
+
+The increment of the merged branch will be ignored when this branch related property is set to `true` on the source branch.
+
+### prevent-increment-when-current-commit-tagged
+
+This branch related property controls the behvior whether to use the tagged (value set to true) or the incremented (value set to false) semantic version. Defaults to true.
 
 ### label-number-pattern
 
@@ -644,10 +874,9 @@ Indicates this branch config represents develop in GitFlow.
 
 Indicates this branch config represents a release branch in GitFlow.
 
-### is-mainline
+### is-main-branch
 
-When using Mainline mode, this indicates that this branch is a mainline. By
-default `main` and `support/*` are mainlines.
+This indicates that this branch is a main branch. By default `main` and `support/*` are main branches.
 
 ### pre-release-weight
 
@@ -685,3 +914,13 @@ Example of invalid `Strict`, but valid `Loose`
 [modes]: /docs/reference/modes
 [variables]: /docs/reference/variables
 [version-sources]: /docs/reference/version-sources
+
+### strategies
+
+Specifies which version strategy implementation (one ore more) will be used to determine the next version. Following values are supported and can be combined:
+-   ConfiguredNextVersion
+-   MergeMessage
+-   TaggedCommit
+-   TrackReleaseBranches
+-   VersionInBranchName
+-   TrunkBased

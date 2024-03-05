@@ -20,7 +20,6 @@ public class HelpWriterTests : TestBase
         var lookup = new Dictionary<string, string>
         {
             { nameof(Arguments.TargetUrl), "/url" },
-            { nameof(Arguments.Init), "init" },
             { nameof(Arguments.TargetBranch), "/b" },
             { nameof(Arguments.LogFilePath) , "/l" },
             { nameof(Arguments.OutputFile) , "/outputfile" },
@@ -42,7 +41,8 @@ public class HelpWriterTests : TestBase
 
         var ignored = new[]
         {
-            nameof(Arguments.Authentication)
+            nameof(Arguments.Authentication),
+            nameof(Arguments.UpdateAssemblyInfoFileName)
         };
         typeof(Arguments).GetFields()
             .Select(p => p.Name)

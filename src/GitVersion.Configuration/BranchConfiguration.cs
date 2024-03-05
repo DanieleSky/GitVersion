@@ -7,8 +7,8 @@ namespace GitVersion.Configuration;
 internal record BranchConfiguration : IBranchConfiguration
 {
     [JsonPropertyName("mode")]
-    [JsonPropertyDescription("The versioning mode for this branch. Can be 'ContinuousDelivery', 'ContinuousDeployment', 'Mainline'.")]
-    public VersioningMode? VersioningMode { get; internal set; }
+    [JsonPropertyDescription("The deployment mode for this branch. Can be 'ManualDeployment', 'ContinuousDelivery', 'ContinuousDeployment'.")]
+    public DeploymentMode? DeploymentMode { get; internal set; }
 
     [JsonPropertyName("label")]
     [JsonPropertyDescription("The label to use for this branch. Use the value {BranchName} or similar as a placeholder to insert a named capture group from RegularExpression (fx. the branch name).")]
@@ -18,9 +18,12 @@ internal record BranchConfiguration : IBranchConfiguration
     [JsonPropertyDescription("The increment strategy for this branch. Can be 'Inherit', 'Patch', 'Minor', 'Major', 'None'.")]
     public IncrementStrategy Increment { get; internal set; }
 
-    [JsonPropertyName("prevent-increment-of-merged-branch-version")]
-    [JsonPropertyDescription("Prevent increment of merged branch version.")]
-    public bool? PreventIncrementOfMergedBranchVersion { get; internal set; }
+    [JsonIgnore]
+    IPreventIncrementConfiguration IBranchConfiguration.PreventIncrement => PreventIncrement;
+
+    [JsonPropertyName("prevent-increment")]
+    [JsonPropertyDescription("The prevent increment configuration section.")]
+    public PreventIncrementConfiguration PreventIncrement { get; internal set; } = new();
 
     [JsonPropertyName("label-number-pattern")]
     [JsonPropertyDescription($"The regular expression pattern to use to extract the number from the branch name. Defaults to '{ConfigurationConstants.DefaultLabelNumberPattern}'.")]
@@ -70,9 +73,9 @@ internal record BranchConfiguration : IBranchConfiguration
     [JsonPropertyDescription("Indicates this branch configuration represents a release branch in GitFlow.")]
     public bool? IsReleaseBranch { get; internal set; }
 
-    [JsonPropertyName("is-mainline")]
+    [JsonPropertyName("is-main-branch")]
     [JsonPropertyDescription("When using Mainline mode, this indicates that this branch is a mainline. By default main and support/* are mainlines.")]
-    public bool? IsMainline { get; internal set; }
+    public bool? IsMainBranch { get; internal set; }
 
     [JsonPropertyName("pre-release-weight")]
     [JsonPropertyDescription("Provides a way to translate the PreReleaseLabel to a number.")]
@@ -85,10 +88,14 @@ internal record BranchConfiguration : IBranchConfiguration
         return new BranchConfiguration(this)
         {
             Increment = Increment == IncrementStrategy.Inherit ? configuration.Increment : Increment,
-            VersioningMode = VersioningMode ?? configuration.VersioningMode,
+            DeploymentMode = DeploymentMode ?? configuration.DeploymentMode,
             Label = Label ?? configuration.Label,
-            PreventIncrementOfMergedBranchVersion = PreventIncrementOfMergedBranchVersion
-                ?? configuration.PreventIncrementOfMergedBranchVersion,
+            PreventIncrement = new PreventIncrementConfiguration()
+            {
+                OfMergedBranch = PreventIncrement.OfMergedBranch ?? configuration.PreventIncrement.OfMergedBranch,
+                WhenBranchMerged = PreventIncrement.WhenBranchMerged ?? configuration.PreventIncrement.WhenBranchMerged,
+                WhenCurrentCommitTagged = PreventIncrement.WhenCurrentCommitTagged ?? configuration.PreventIncrement.WhenCurrentCommitTagged
+            },
             LabelNumberPattern = LabelNumberPattern ?? configuration.LabelNumberPattern,
             TrackMergeTarget = TrackMergeTarget ?? configuration.TrackMergeTarget,
             TrackMergeMessage = TrackMergeMessage ?? configuration.TrackMergeMessage,
@@ -96,15 +103,8 @@ internal record BranchConfiguration : IBranchConfiguration
             RegularExpression = RegularExpression ?? configuration.RegularExpression,
             TracksReleaseBranches = TracksReleaseBranches ?? configuration.TracksReleaseBranches,
             IsReleaseBranch = IsReleaseBranch ?? configuration.IsReleaseBranch,
-            IsMainline = IsMainline ?? configuration.IsMainline,
+            IsMainBranch = IsMainBranch ?? configuration.IsMainBranch,
             PreReleaseWeight = PreReleaseWeight ?? configuration.PreReleaseWeight
         };
     }
-
-    public IBranchConfiguration Empty() => new BranchConfiguration
-    {
-        RegularExpression = string.Empty,
-        Label = ConfigurationConstants.BranchNamePlaceholder,
-        Increment = IncrementStrategy.Inherit
-    };
 }

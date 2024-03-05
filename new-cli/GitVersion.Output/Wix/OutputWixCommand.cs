@@ -1,20 +1,15 @@
+using GitVersion.Extensions;
 using GitVersion.Infrastructure;
 
 namespace GitVersion.Commands;
 
 [Command<OutputCommand>("wix", "Outputs version to wix file")]
-public class OutputWixCommand : ICommand<OutputWixSettings>
+public class OutputWixCommand(ILogger logger, IService service) : ICommand<OutputWixSettings>
 {
-    private readonly ILogger logger;
-    private readonly IService service;
+    private readonly ILogger logger = logger.NotNull();
+    private readonly IService service = service.NotNull();
 
-    public OutputWixCommand(ILogger logger, IService service)
-    {
-        this.logger = logger;
-        this.service = service;
-    }
-
-    public Task<int> InvokeAsync(OutputWixSettings settings)
+    public Task<int> InvokeAsync(OutputWixSettings settings, CancellationToken cancellationToken = default)
     {
         var value = service.Call();
         logger.LogInformation($"Command : 'output wix', LogFile : '{settings.LogFile}', WorkDir : '{settings.OutputDir}', InputFile: '{settings.InputFile}', WixFile: '{settings.WixFile}' ");

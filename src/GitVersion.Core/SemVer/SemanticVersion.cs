@@ -144,7 +144,8 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
         return v1.CompareTo(v2) < 0;
     }
 
-    public static SemanticVersion Parse(string version, string? tagPrefixRegex, SemanticVersionFormat versionFormat = SemanticVersionFormat.Strict)
+    public static SemanticVersion Parse(
+        string version, string? tagPrefixRegex, SemanticVersionFormat versionFormat = SemanticVersionFormat.Strict)
     {
         if (!TryParse(version, tagPrefixRegex, out var semanticVersion, versionFormat))
             throw new WarningException($"Failed to parse {version} into a Semantic Version");
@@ -152,7 +153,8 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
         return semanticVersion;
     }
 
-    public static bool TryParse(string version, string? tagPrefixRegex, [NotNullWhen(true)] out SemanticVersion? semanticVersion, SemanticVersionFormat format = SemanticVersionFormat.Strict)
+    public static bool TryParse(string version, string? tagPrefixRegex,
+        [NotNullWhen(true)] out SemanticVersion? semanticVersion, SemanticVersionFormat format = SemanticVersionFormat.Strict)
     {
         var match = Regex.Match(version, $"^({tagPrefixRegex})(?<version>.*)$");
 
@@ -178,7 +180,7 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
             return false;
         }
 
-        semanticVersion = new SemanticVersion
+        semanticVersion = new()
         {
             Major = long.Parse(parsed.Groups["major"].Value),
             Minor = parsed.Groups["minor"].Success ? long.Parse(parsed.Groups["minor"].Value) : 0,
@@ -210,7 +212,7 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
             };
         }
 
-        semanticVersion = new SemanticVersion
+        semanticVersion = new()
         {
             Major = long.Parse(parsed.Groups["Major"].Value),
             Minor = parsed.Groups["Minor"].Success ? long.Parse(parsed.Groups["Minor"].Value) : 0,
@@ -327,64 +329,6 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
         }
     }
 
-    public SemanticVersion IncrementVersion(VersionField incrementStrategy)
-        => IncrementVersion(incrementStrategy, null, isMainRelease: true);
-
-    private SemanticVersion IncrementVersion(VersionField incrementStrategy, string? label, bool isMainRelease)
-    {
-        var major = Major;
-        var minor = Minor;
-        var patch = Patch;
-
-        if (isMainRelease || !PreReleaseTag.HasTag())
-        {
-            switch (incrementStrategy)
-            {
-                case VersionField.None:
-                    break;
-                case VersionField.Major:
-                    major++;
-                    minor = 0;
-                    patch = 0;
-                    break;
-                case VersionField.Minor:
-                    minor++;
-                    patch = 0;
-                    break;
-                case VersionField.Patch:
-                    patch++;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(incrementStrategy));
-            }
-        }
-
-        string preReleaseTagName = string.Empty;
-        long? preReleaseTagNumber = null;
-
-        if (!isMainRelease)
-        {
-            if (PreReleaseTag.HasTag())
-            {
-                preReleaseTagNumber = PreReleaseTag.Number + 1;
-                preReleaseTagName = PreReleaseTag.Name;
-            }
-            else
-            {
-                preReleaseTagNumber = 1;
-                preReleaseTagName = label ?? string.Empty;
-            }
-        }
-
-        return new SemanticVersion(this)
-        {
-            Major = major,
-            Minor = minor,
-            Patch = patch,
-            PreReleaseTag = new SemanticVersionPreReleaseTag(preReleaseTagName, preReleaseTagNumber, true)
-        };
-    }
-
     public SemanticVersion Increment(VersionField incrementStrategy, string? label)
         => Increment(incrementStrategy, label, mode: IncrementMode.Standard);
 
@@ -469,12 +413,12 @@ public class SemanticVersion : IFormattable, IComparable<SemanticVersion>, IEqua
             preReleaseTagName = label;
         }
 
-        return new SemanticVersion(this)
+        return new(this)
         {
             Major = major,
             Minor = minor,
             Patch = patch,
-            PreReleaseTag = new SemanticVersionPreReleaseTag(preReleaseTagName, preReleaseNumber, true)
+            PreReleaseTag = new(preReleaseTagName, preReleaseNumber, true)
         };
     }
 

@@ -9,15 +9,13 @@ namespace GitVersion.VersionCalculation;
 /// BaseVersionSource is the tag's commit.
 /// Increments if the tag is not the current commit.
 /// </summary>
-internal sealed class TaggedCommitVersionStrategy : VersionStrategyBase
+internal sealed class TaggedCommitVersionStrategy(ITaggedSemanticVersionRepository taggedSemanticVersionRepository, Lazy<GitVersionContext> versionContext)
+    : VersionStrategyBase(versionContext)
 {
-    private readonly ITaggedSemanticVersionRepository taggedSemanticVersionRepository;
-
-    public TaggedCommitVersionStrategy(ITaggedSemanticVersionRepository taggedSemanticVersionRepository, Lazy<GitVersionContext> versionContext)
-        : base(versionContext) => this.taggedSemanticVersionRepository = taggedSemanticVersionRepository.NotNull();
+    private readonly ITaggedSemanticVersionRepository taggedSemanticVersionRepository = taggedSemanticVersionRepository.NotNull();
 
     public override IEnumerable<BaseVersion> GetBaseVersions(EffectiveBranchConfiguration configuration)
-        => Context.Configuration.VersioningMode == VersioningMode.TrunkBased ? Enumerable.Empty<BaseVersion>()
+        => !Context.Configuration.VersionStrategy.HasFlag(VersionStrategies.TaggedCommit) ? []
         : GetTaggedSemanticVersions(configuration).Select(CreateBaseVersion);
 
     private IEnumerable<SemanticVersionWithTag> GetTaggedSemanticVersions(EffectiveBranchConfiguration configuration)
@@ -25,20 +23,21 @@ internal sealed class TaggedCommitVersionStrategy : VersionStrategyBase
         configuration.NotNull();
 
         var label = configuration.Value.GetBranchSpecificLabel(Context.CurrentBranch.Name, null);
-        foreach (var semanticVersion in taggedSemanticVersionRepository
-            .GetTaggedSemanticVersions(Context.CurrentBranch, configuration.Value).SelectMany(element => element))
+        var taggedSemanticVersions = taggedSemanticVersionRepository
+            .GetAllTaggedSemanticVersions(Context.Configuration, configuration.Value, Context.CurrentBranch, label, Context.CurrentCommit.When)
+            .SelectMany(element => element)
+            .Distinct().ToArray();
+
+        foreach (var semanticVersion in taggedSemanticVersions)
         {
-            if (semanticVersion.Value.IsMatchForBranchSpecificLabel(label))
-            {
-                yield return semanticVersion;
-            }
+            yield return semanticVersion;
         }
     }
 
     private static BaseVersion CreateBaseVersion(SemanticVersionWithTag semanticVersion)
     {
         var tagCommit = semanticVersion.Tag.Commit;
-        return new BaseVersion(
+        return new(
              $"Git tag '{semanticVersion.Tag.Name.Friendly}'", true, semanticVersion.Value, tagCommit, null
          );
     }

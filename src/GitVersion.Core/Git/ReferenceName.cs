@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Text.RegularExpressions;
 using GitVersion.Extensions;
 using GitVersion.Helpers;
@@ -17,12 +16,12 @@ public class ReferenceName : IEquatable<ReferenceName?>, IComparable<ReferenceNa
     public const string OriginPrefix = "origin/";
 
     private static readonly string[] PullRequestPrefixes =
-    {
+    [
         "refs/pull/",
         "refs/pull-requests/",
         "refs/remotes/pull/",
         "refs/remotes/pull-requests/"
-    };
+    ];
 
     public ReferenceName(string canonical)
     {
@@ -52,7 +51,7 @@ public class ReferenceName : IEquatable<ReferenceName?>, IComparable<ReferenceNa
             || IsPrefixedBy(canonicalName, TagPrefix)
             || IsPrefixedBy(canonicalName, PullRequestPrefixes))
         {
-            value = new ReferenceName(canonicalName);
+            value = new(canonicalName);
         }
 
         return value != null;
@@ -84,8 +83,6 @@ public class ReferenceName : IEquatable<ReferenceName?>, IComparable<ReferenceNa
                                       SemanticVersionFormat format)
     {
         result = default;
-
-        Contract.Assume(versionPatternRegex.ToString().StartsWith("^"));
 
         int length = 0;
         foreach (var branchPart in WithoutOrigin.Split(GetBranchSeparator()))

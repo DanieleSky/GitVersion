@@ -18,34 +18,39 @@ public record EffectiveConfiguration
         var fallbackBranchConfiguration = configuration.GetFallbackBranchConfiguration();
         branchConfiguration = branchConfiguration.Inherit(fallbackBranchConfiguration);
 
-        if (!branchConfiguration.VersioningMode.HasValue)
-            throw new Exception("Configuration value for 'Versioning mode' has no value. (this should not happen, please report an issue)");
+        if (!branchConfiguration.DeploymentMode.HasValue)
+            throw new("Configuration value for 'Deployment mode' has no value. (this should not happen, please report an issue)");
 
         if (!configuration.AssemblyVersioningScheme.HasValue)
-            throw new Exception("Configuration value for 'AssemblyVersioningScheme' has no value. (this should not happen, please report an issue)");
+            throw new("Configuration value for 'AssemblyVersioningScheme' has no value. (this should not happen, please report an issue)");
 
         if (!configuration.AssemblyFileVersioningScheme.HasValue)
-            throw new Exception("Configuration value for 'AssemblyFileVersioningScheme' has no value. (this should not happen, please report an issue)");
+            throw new("Configuration value for 'AssemblyFileVersioningScheme' has no value. (this should not happen, please report an issue)");
 
         if (!branchConfiguration.CommitMessageIncrementing.HasValue)
-            throw new Exception("Configuration value for 'CommitMessageIncrementing' has no value. (this should not happen, please report an issue)");
+            throw new("Configuration value for 'CommitMessageIncrementing' has no value. (this should not happen, please report an issue)");
 
         if (!configuration.TagPreReleaseWeight.HasValue)
-            throw new Exception("Configuration value for 'TagPreReleaseWeight' has no value. (this should not happen, please report an issue)");
+            throw new("Configuration value for 'TagPreReleaseWeight' has no value. (this should not happen, please report an issue)");
+
+        if (configuration.CommitDateFormat.IsNullOrEmpty())
+            throw new("Configuration value for 'CommitDateFormat' has no value. (this should not happen, please report an issue)");
 
         AssemblyVersioningScheme = configuration.AssemblyVersioningScheme.Value;
         AssemblyFileVersioningScheme = configuration.AssemblyFileVersioningScheme.Value;
         AssemblyInformationalFormat = configuration.AssemblyInformationalFormat;
         AssemblyVersioningFormat = configuration.AssemblyVersioningFormat;
         AssemblyFileVersioningFormat = configuration.AssemblyFileVersioningFormat;
-        VersioningMode = branchConfiguration.VersioningMode.Value;
+        DeploymentMode = branchConfiguration.DeploymentMode.Value;
         TagPrefix = configuration.TagPrefix;
         VersionInBranchRegex = configuration.VersionInBranchRegex;
         Label = branchConfiguration.Label;
         NextVersion = configuration.NextVersion;
         Increment = branchConfiguration.Increment;
         RegularExpression = branchConfiguration.RegularExpression;
-        PreventIncrementOfMergedBranchVersion = branchConfiguration.PreventIncrementOfMergedBranchVersion ?? false;
+        PreventIncrementOfMergedBranch = branchConfiguration.PreventIncrement.OfMergedBranch ?? false;
+        PreventIncrementWhenBranchMerged = branchConfiguration.PreventIncrement.WhenBranchMerged ?? false;
+        PreventIncrementWhenCurrentCommitTagged = branchConfiguration.PreventIncrement.WhenCurrentCommitTagged ?? true;
         LabelNumberPattern = branchConfiguration.LabelNumberPattern;
         TrackMergeTarget = branchConfiguration.TrackMergeTarget ?? false;
         TrackMergeMessage = branchConfiguration.TrackMergeMessage ?? true;
@@ -57,77 +62,19 @@ public record EffectiveConfiguration
         VersionFilters = configuration.Ignore.ToFilters();
         TracksReleaseBranches = branchConfiguration.TracksReleaseBranches ?? false;
         IsReleaseBranch = branchConfiguration.IsReleaseBranch ?? false;
-        IsMainline = branchConfiguration.IsMainline ?? false;
+        IsMainBranch = branchConfiguration.IsMainBranch ?? false;
         CommitDateFormat = configuration.CommitDateFormat;
         UpdateBuildNumber = configuration.UpdateBuildNumber;
         SemanticVersionFormat = configuration.SemanticVersionFormat;
+        VersionStrategy = configuration.VersionStrategy;
         PreReleaseWeight = branchConfiguration.PreReleaseWeight ?? 0;
         TagPreReleaseWeight = configuration.TagPreReleaseWeight.Value;
     }
 
-    protected EffectiveConfiguration(AssemblyVersioningScheme assemblyVersioningScheme,
-        AssemblyFileVersioningScheme assemblyFileVersioningScheme,
-        string? assemblyInformationalFormat,
-        string? assemblyVersioningFormat,
-        string? assemblyFileVersioningFormat,
-        VersioningMode versioningMode,
-        string? tagPrefix,
-        string label,
-        string? nextVersion,
-        IncrementStrategy increment,
-        string? regularExpression,
-        bool preventIncrementOfMergedBranchVersion,
-        string? labelNumberPattern,
-        bool trackMergeTarget,
-        string? majorVersionBumpMessage,
-        string? minorVersionBumpMessage,
-        string? patchVersionBumpMessage,
-        string? noBumpMessage,
-        CommitMessageIncrementMode commitMessageIncrementing,
-        IEnumerable<IVersionFilter> versionFilters,
-        bool tracksReleaseBranches,
-        bool isReleaseBranch,
-        bool isMainline,
-        string? commitDateFormat,
-        bool updateBuildNumber,
-        SemanticVersionFormat semanticVersionFormat,
-        int preReleaseWeight,
-        int tagPreReleaseWeight)
-    {
-        AssemblyVersioningScheme = assemblyVersioningScheme;
-        AssemblyFileVersioningScheme = assemblyFileVersioningScheme;
-        AssemblyInformationalFormat = assemblyInformationalFormat;
-        AssemblyVersioningFormat = assemblyVersioningFormat;
-        AssemblyFileVersioningFormat = assemblyFileVersioningFormat;
-        VersioningMode = versioningMode;
-        TagPrefix = tagPrefix;
-        Label = label;
-        NextVersion = nextVersion;
-        Increment = increment;
-        RegularExpression = regularExpression;
-        PreventIncrementOfMergedBranchVersion = preventIncrementOfMergedBranchVersion;
-        LabelNumberPattern = labelNumberPattern;
-        TrackMergeTarget = trackMergeTarget;
-        MajorVersionBumpMessage = majorVersionBumpMessage;
-        MinorVersionBumpMessage = minorVersionBumpMessage;
-        PatchVersionBumpMessage = patchVersionBumpMessage;
-        NoBumpMessage = noBumpMessage;
-        CommitMessageIncrementing = commitMessageIncrementing;
-        VersionFilters = versionFilters;
-        TracksReleaseBranches = tracksReleaseBranches;
-        IsReleaseBranch = isReleaseBranch;
-        IsMainline = isMainline;
-        CommitDateFormat = commitDateFormat;
-        UpdateBuildNumber = updateBuildNumber;
-        SemanticVersionFormat = semanticVersionFormat;
-        PreReleaseWeight = preReleaseWeight;
-        TagPreReleaseWeight = tagPreReleaseWeight;
-    }
-
     public bool TracksReleaseBranches { get; }
     public bool IsReleaseBranch { get; }
-    public bool IsMainline { get; }
-    public VersioningMode VersioningMode { get; }
+    public bool IsMainBranch { get; }
+    public DeploymentMode DeploymentMode { get; }
     public AssemblyVersioningScheme AssemblyVersioningScheme { get; }
     public AssemblyFileVersioningScheme AssemblyFileVersioningScheme { get; }
     public string? AssemblyInformationalFormat { get; }
@@ -152,7 +99,11 @@ public record EffectiveConfiguration
 
     public string? RegularExpression { get; }
 
-    public bool PreventIncrementOfMergedBranchVersion { get; }
+    public bool PreventIncrementOfMergedBranch { get; }
+
+    public bool PreventIncrementWhenBranchMerged { get; }
+
+    public bool PreventIncrementWhenCurrentCommitTagged { get; }
 
     public string? LabelNumberPattern { get; }
 
@@ -176,7 +127,9 @@ public record EffectiveConfiguration
 
     public bool UpdateBuildNumber { get; }
 
-    public SemanticVersionFormat SemanticVersionFormat { get; set; }
+    public SemanticVersionFormat SemanticVersionFormat { get; }
+
+    public VersionStrategies VersionStrategy { get; }
 
     public int PreReleaseWeight { get; }
 

@@ -10,16 +10,15 @@ namespace GitVersion.VersionCalculation;
 /// BaseVersionSource is the commit where the branch was branched from its parent.
 /// Does not increment.
 /// </summary>
-internal class VersionInBranchNameVersionStrategy : VersionStrategyBase
+internal class VersionInBranchNameVersionStrategy(IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
+    : VersionStrategyBase(versionContext)
 {
-    private readonly IRepositoryStore repositoryStore;
-
-    public VersionInBranchNameVersionStrategy(IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
-        : base(versionContext) => this.repositoryStore = repositoryStore.NotNull();
+    private readonly IRepositoryStore repositoryStore = repositoryStore.NotNull();
 
     public override IEnumerable<BaseVersion> GetBaseVersions(EffectiveBranchConfiguration configuration)
     {
-        if (Context.Configuration.VersioningMode == VersioningMode.TrunkBased) yield break;
+        if (!Context.Configuration.VersionStrategy.HasFlag(VersionStrategies.VersionInBranchName))
+            yield break;
 
         if (configuration.Value.IsReleaseBranch && TryGetBaseVersion(out var baseVersion, configuration))
         {
@@ -46,7 +45,7 @@ internal class VersionInBranchNameVersionStrategy : VersionStrategyBase
                     branchNameOverride = result.Name;
                 }
 
-                baseVersion = new BaseVersion(
+                baseVersion = new(
                     "Version in branch name", false, result.Value, commitBranchWasBranchedFrom.Value.Commit, branchNameOverride
                 );
                 break;

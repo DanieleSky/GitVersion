@@ -24,13 +24,16 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
     private string? commitDateFormat;
     private bool updateBuildNumber;
     private SemanticVersionFormat semanticVersionFormat;
+    private VersionStrategies versionStrategy;
     private Dictionary<string, string> mergeMessageFormats = new();
     private readonly List<IReadOnlyDictionary<object, object?>> overrides = new();
     private readonly Dictionary<string, BranchConfigurationBuilder> branchConfigurationBuilders = new();
-    private VersioningMode? versioningMode;
+    private DeploymentMode? versioningMode;
     private string? label;
     private IncrementStrategy increment = IncrementStrategy.Inherit;
-    private bool? preventIncrementOfMergedBranchVersion;
+    private bool? preventIncrementOfMergedBranch;
+    private bool? preventIncrementWhenBranchMerged;
+    private bool? preventIncrementWhenCurrentCommitTagged;
     private string? labelNumberPattern;
     private bool? trackMergeTarget;
     private bool? trackMergeMessage;
@@ -38,7 +41,7 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
     private string? regularExpression;
     private bool? tracksReleaseBranches;
     private bool? isReleaseBranch;
-    private bool? isMainline;
+    private bool? isMainBranch;
     private int? preReleaseWeight;
 
     protected readonly BranchMetaData MainBranch = new()
@@ -199,6 +202,12 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         return (TConfigurationBuilder)this;
     }
 
+    public virtual TConfigurationBuilder WithVersionStrategy(VersionStrategies value)
+    {
+        this.versionStrategy = value;
+        return (TConfigurationBuilder)this;
+    }
+
     public virtual TConfigurationBuilder WithMergeMessageFormats(IReadOnlyDictionary<string, string> value)
     {
         this.mergeMessageFormats = new(value);
@@ -224,7 +233,7 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         return (TConfigurationBuilder)this;
     }
 
-    public virtual TConfigurationBuilder WithVersioningMode(VersioningMode? value)
+    public virtual TConfigurationBuilder WithDeploymentMode(DeploymentMode? value)
     {
         this.versioningMode = value;
         return (TConfigurationBuilder)this;
@@ -242,9 +251,21 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         return (TConfigurationBuilder)this;
     }
 
-    public virtual TConfigurationBuilder WithPreventIncrementOfMergedBranchVersion(bool? value)
+    public virtual TConfigurationBuilder WithPreventIncrementOfMergedBranch(bool? value)
     {
-        this.preventIncrementOfMergedBranchVersion = value;
+        this.preventIncrementOfMergedBranch = value;
+        return (TConfigurationBuilder)this;
+    }
+
+    public virtual TConfigurationBuilder WithPreventIncrementWhenBranchMerged(bool? value)
+    {
+        this.preventIncrementWhenBranchMerged = value;
+        return (TConfigurationBuilder)this;
+    }
+
+    public virtual TConfigurationBuilder WithPreventIncrementWhenCurrentCommitTagged(bool? value)
+    {
+        this.preventIncrementWhenCurrentCommitTagged = value;
         return (TConfigurationBuilder)this;
     }
 
@@ -290,9 +311,9 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         return (TConfigurationBuilder)this;
     }
 
-    public virtual TConfigurationBuilder WithIsMainline(bool? value)
+    public virtual TConfigurationBuilder WithIsMainBranch(bool? value)
     {
-        this.isMainline = value;
+        this.isMainBranch = value;
         return (TConfigurationBuilder)this;
     }
 
@@ -321,15 +342,18 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         WithCommitDateFormat(value.CommitDateFormat);
         WithUpdateBuildNumber(value.UpdateBuildNumber);
         WithSemanticVersionFormat(value.SemanticVersionFormat);
+        WithVersionStrategy(value.VersionStrategy);
         WithMergeMessageFormats(value.MergeMessageFormats);
         foreach (var (name, branchConfiguration) in value.Branches)
         {
             WithBranch(name).WithConfiguration(branchConfiguration);
         }
-        WithVersioningMode(value.VersioningMode);
+        WithDeploymentMode(value.DeploymentMode);
         WithLabel(value.Label);
         WithIncrement(value.Increment);
-        WithPreventIncrementOfMergedBranchVersion(value.PreventIncrementOfMergedBranchVersion);
+        WithPreventIncrementOfMergedBranch(value.PreventIncrement.OfMergedBranch);
+        WithPreventIncrementWhenBranchMerged(value.PreventIncrement.WhenBranchMerged);
+        WithPreventIncrementWhenCurrentCommitTagged(value.PreventIncrement.WhenCurrentCommitTagged);
         WithLabelNumberPattern(value.LabelNumberPattern);
         WithTrackMergeTarget(value.TrackMergeTarget);
         WithTrackMergeMessage(value.TrackMergeMessage);
@@ -337,7 +361,7 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
         WithRegularExpression(value.RegularExpression);
         WithTracksReleaseBranches(value.TracksReleaseBranches);
         WithIsReleaseBranch(value.IsReleaseBranch);
-        WithIsMainline(value.IsMainline);
+        WithIsMainBranch(value.IsMainBranch);
         WithPreReleaseWeight(value.PreReleaseWeight);
         return (TConfigurationBuilder)this;
     }
@@ -358,6 +382,10 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
             branches.Add(name, (BranchConfiguration)branchConfigurationBuilder.Build());
         }
 
+        var versionStrategies = Enum.GetValues<VersionStrategies>()
+            .Where(element => element != VersionStrategies.None && this.versionStrategy.HasFlag(element))
+            .ToArray();
+
         IGitVersionConfiguration configuration = new GitVersionConfiguration
         {
             AssemblyVersioningScheme = this.assemblyVersioningScheme,
@@ -377,9 +405,10 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
             CommitDateFormat = this.commitDateFormat,
             UpdateBuildNumber = this.updateBuildNumber,
             SemanticVersionFormat = this.semanticVersionFormat,
+            VersionStrategies = versionStrategies,
             Branches = branches,
             MergeMessageFormats = this.mergeMessageFormats,
-            VersioningMode = this.versioningMode,
+            DeploymentMode = this.versioningMode,
             Label = this.label,
             Increment = this.increment,
             RegularExpression = this.regularExpression,
@@ -387,14 +416,19 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
             TrackMergeTarget = this.trackMergeTarget,
             TrackMergeMessage = this.trackMergeMessage,
             CommitMessageIncrementing = this.commitMessageIncrementing,
-            IsMainline = this.isMainline,
+            IsMainBranch = this.isMainBranch,
             IsReleaseBranch = this.isReleaseBranch,
             LabelNumberPattern = this.labelNumberPattern,
-            PreventIncrementOfMergedBranchVersion = this.preventIncrementOfMergedBranchVersion,
+            PreventIncrement = new PreventIncrementConfiguration()
+            {
+                OfMergedBranch = this.preventIncrementOfMergedBranch,
+                WhenBranchMerged = this.preventIncrementWhenBranchMerged,
+                WhenCurrentCommitTagged = this.preventIncrementWhenCurrentCommitTagged,
+            },
             PreReleaseWeight = this.preReleaseWeight
         };
 
-        if (this.overrides.Any())
+        if (this.overrides.Count != 0)
         {
             ConfigurationHelper configurationHelper = new(configuration);
             foreach (var item in this.overrides)
@@ -442,7 +476,7 @@ internal abstract class ConfigurationBuilderBase<TConfigurationBuilder> : IConfi
 
             var sourceBranches = branchConfiguration.SourceBranches ?? throw new ConfigurationException($"Branch configuration '{name}' is missing required configuration 'source-branches'{helpUrl}");
             var missingSourceBranches = sourceBranches.Where(sb => !configuration.Branches.ContainsKey(sb)).ToArray();
-            if (missingSourceBranches.Any())
+            if (missingSourceBranches.Length != 0)
             {
                 throw new ConfigurationException($"Branch configuration '{name}' defines these 'source-branches' that are not configured: '[{string.Join(",", missingSourceBranches)}]'{helpUrl}");
             }

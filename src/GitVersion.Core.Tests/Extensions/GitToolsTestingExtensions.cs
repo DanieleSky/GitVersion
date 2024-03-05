@@ -25,7 +25,7 @@ public static class GitToolsTestingExtensions
         commit.Id.Returns(objectId);
         commit.Sha.Returns(sha);
         commit.Message.Returns("Commit " + commitCount++);
-        commit.Parents.Returns(Enumerable.Empty<ICommit>());
+        commit.Parents.Returns([]);
         commit.When.Returns(when.AddSeconds(1));
         return commit;
     }
@@ -39,7 +39,7 @@ public static class GitToolsTestingExtensions
         branch.Tip.Returns(commits.FirstOrDefault());
 
         var commitsCollection = Substitute.For<ICommitCollection>();
-        commitsCollection.GetEnumerator().Returns(_ => ((IEnumerable<ICommit>)commits).GetEnumerator());
+        commitsCollection.MockCollectionReturn(commits);
         commitsCollection.GetCommitsPriorTo(Arg.Any<DateTimeOffset>()).Returns(commits);
         branch.Commits.Returns(commitsCollection);
         return branch;
@@ -90,10 +90,10 @@ public static class GitToolsTestingExtensions
 
             var context = contextOptions.Value;
 
-            var nextVersion = nextVersionCalculator.FindVersion();
-            return variableProvider.GetVariablesFor(
-                nextVersion.IncrementedVersion, nextVersion.Configuration, context.CurrentCommitTaggedVersion
-            );
+            var semanticVersion = nextVersionCalculator.FindVersion();
+
+            var effectiveConfiguration = context.Configuration.GetEffectiveConfiguration(context.CurrentBranch.Name);
+            return variableProvider.GetVariablesFor(semanticVersion, context.Configuration, effectiveConfiguration.PreReleaseWeight);
         }
         catch (Exception)
         {

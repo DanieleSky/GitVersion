@@ -3,31 +3,24 @@ using GitVersion.Logging;
 
 namespace GitVersion.VersionCalculation;
 
-internal sealed class ManualDeploymentVersionCalculator : NonTrunkBasedVersionCalculatorBase, IVersionModeCalculator
+internal sealed class ManualDeploymentVersionCalculator(ILog log, IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
+    : VersionCalculatorBase(log, repositoryStore, versionContext), IDeploymentModeCalculator
 {
-    public ManualDeploymentVersionCalculator(ILog log, IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
-        : base(log, repositoryStore, versionContext)
-    {
-    }
-
-    public SemanticVersion Calculate(NextVersion nextVersion)
+    public SemanticVersion Calculate(SemanticVersion semanticVersion, ICommit? baseVersionSource)
     {
         using (this.log.IndentLog("Using manual deployment workflow to calculate the incremented version."))
         {
-            return CalculateInternal(nextVersion);
+            return CalculateInternal(semanticVersion, baseVersionSource);
         }
     }
 
-    private SemanticVersion CalculateInternal(NextVersion nextVersion)
+    private SemanticVersion CalculateInternal(SemanticVersion semanticVersion, ICommit? baseVersionSource)
     {
-        if (ShouldTakeIncrementedVersion(nextVersion))
-        {
-            return CalculateIncrementedVersion(nextVersion);
-        }
+        var buildMetaData = CreateVersionBuildMetaData(baseVersionSource);
 
-        return new SemanticVersion(nextVersion.BaseVersion.GetSemanticVersion())
+        return new SemanticVersion(semanticVersion)
         {
-            BuildMetaData = CreateVersionBuildMetaData(nextVersion.BaseVersion.BaseVersionSource)
+            BuildMetaData = buildMetaData
         };
     }
 }

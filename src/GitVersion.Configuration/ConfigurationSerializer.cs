@@ -23,19 +23,15 @@ internal static class ConfigurationSerializer
     public static IGitVersionConfiguration Read(TextReader reader)
     {
         var configuration = Deserializer.Deserialize<GitVersionConfiguration?>(reader);
-        return configuration ?? new GitVersionConfiguration();
+        return configuration ?? GitHubFlowConfigurationBuilder.New.Build();
     }
 
     public static void Write(IGitVersionConfiguration configuration, TextWriter writer)
         => Serializer.Serialize(writer, configuration);
 }
 
-internal sealed class JsonPropertyNameInspector : TypeInspectorSkeleton
+internal sealed class JsonPropertyNameInspector(ITypeInspector innerTypeDescriptor) : TypeInspectorSkeleton
 {
-    private readonly ITypeInspector innerTypeDescriptor;
-
-    public JsonPropertyNameInspector(ITypeInspector innerTypeDescriptor) => this.innerTypeDescriptor = innerTypeDescriptor;
-
     public override IEnumerable<IPropertyDescriptor> GetProperties(Type type, object? container) =>
         innerTypeDescriptor.GetProperties(type, container)
             .Where(p => p.GetCustomAttribute<JsonIgnoreAttribute>() == null)

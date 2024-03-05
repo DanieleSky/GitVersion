@@ -51,9 +51,22 @@ branches:
         var developConfiguration = configuration.Branches["develop"];
         developConfiguration.Increment.ShouldBe(IncrementStrategy.Major);
         developConfiguration.Increment.ShouldNotBe(defaultConfiguration.Branches["develop"].Increment);
-        developConfiguration.VersioningMode.ShouldBe(VersioningMode.ContinuousDelivery);
-        developConfiguration.VersioningMode.ShouldNotBe(defaultConfiguration.Branches["develop"].VersioningMode);
+        developConfiguration.DeploymentMode.ShouldBe(DeploymentMode.ContinuousDelivery);
+        developConfiguration.DeploymentMode.ShouldNotBe(defaultConfiguration.Branches["develop"].DeploymentMode);
         developConfiguration.Label.ShouldBe("dev");
+    }
+
+    [Test]
+    public void CombineVersionStrategyConfigNextAndTaggedCommit()
+    {
+        // Arrange
+        SetupConfigFileContent("strategies: [ConfiguredNextVersion, TaggedCommit]");
+
+        // Act
+        var configuration = this.configurationProvider.ProvideForDirectory(this.repoPath);
+
+        // Assert
+        configuration.VersionStrategy.ShouldBe(VersionStrategies.ConfiguredNextVersion | VersionStrategies.TaggedCommit);
     }
 
     [Test]

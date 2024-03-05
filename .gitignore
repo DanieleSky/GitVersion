@@ -35,6 +35,7 @@
 *.dotCover
 *.orig
 *~
+msbuild.binlog
 
 ##  If you have NuGet Package Restore enabled, uncomment this
 packages/
@@ -117,7 +118,7 @@ releaseArtifacts
 .dotnet
 artifacts
 !build/artifacts
-build/docker/content
+build/docker/nuget
 src/PublicAPI.empty.txt
 
 !**/*.cake

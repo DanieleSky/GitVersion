@@ -4,12 +4,8 @@ using GitVersion.OutputVariables;
 
 namespace GitVersion.Agents;
 
-internal class AppVeyor : BuildAgentBase
+internal class AppVeyor(IEnvironment environment, ILog log) : BuildAgentBase(environment, log)
 {
-    public AppVeyor(IEnvironment environment, ILog log) : base(environment, log)
-    {
-    }
-
     public const string EnvironmentVariableName = "APPVEYOR";
 
     protected override string EnvironmentVariable => EnvironmentVariableName;
@@ -56,10 +52,10 @@ internal class AppVeyor : BuildAgentBase
         var response = httpClient.PostAsync("api/build/variables", stringContent).GetAwaiter().GetResult();
         response.EnsureSuccessStatusCode();
 
-        return new[]
-        {
+        return
+        [
             $"Adding Environment Variable. name='GitVersion_{name}' value='{value}']"
-        };
+        ];
     }
 
     private static HttpClient GetHttpClient(string apiUrl) => new()

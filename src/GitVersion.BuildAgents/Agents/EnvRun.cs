@@ -4,12 +4,8 @@ using GitVersion.OutputVariables;
 
 namespace GitVersion.Agents;
 
-internal class EnvRun : BuildAgentBase
+internal class EnvRun(IEnvironment environment, ILog log) : BuildAgentBase(environment, log)
 {
-    public EnvRun(IEnvironment environment, ILog log) : base(environment, log)
-    {
-    }
-
     public const string EnvironmentVariableName = "ENVRUN_DATABASE";
     protected override string EnvironmentVariable => EnvironmentVariableName;
     public override bool CanApplyToCurrentContext()
@@ -31,9 +27,9 @@ internal class EnvRun : BuildAgentBase
 
     public override string GenerateSetVersionMessage(GitVersionVariables variables) => variables.FullSemVer;
 
-    public override string[] GenerateSetParameterMessage(string name, string? value) => new[]
-    {
+    public override string[] GenerateSetParameterMessage(string name, string? value) =>
+    [
         $"@@envrun[set name='GitVersion_{name}' value='{value}']"
-    };
+    ];
     public override bool PreventFetch() => true;
 }

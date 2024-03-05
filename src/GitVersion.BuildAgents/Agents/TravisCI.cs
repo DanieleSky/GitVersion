@@ -3,12 +3,8 @@ using GitVersion.OutputVariables;
 
 namespace GitVersion.Agents;
 
-internal class TravisCi : BuildAgentBase
+internal class TravisCi(IEnvironment environment, ILog log) : BuildAgentBase(environment, log)
 {
-    public TravisCi(IEnvironment environment, ILog log) : base(environment, log)
-    {
-    }
-
     public const string EnvironmentVariableName = "TRAVIS";
     protected override string EnvironmentVariable => EnvironmentVariableName;
 
@@ -16,10 +12,10 @@ internal class TravisCi : BuildAgentBase
 
     public override string GenerateSetVersionMessage(GitVersionVariables variables) => variables.FullSemVer;
 
-    public override string[] GenerateSetParameterMessage(string name, string? value) => new[]
-    {
+    public override string[] GenerateSetParameterMessage(string name, string? value) =>
+    [
         $"GitVersion_{name}={value}"
-    };
+    ];
 
     public override bool PreventFetch() => true;
 }

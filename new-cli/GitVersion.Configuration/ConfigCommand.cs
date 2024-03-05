@@ -1,3 +1,4 @@
+using GitVersion.Extensions;
 using GitVersion.Infrastructure;
 
 namespace GitVersion.Commands;
@@ -5,18 +6,12 @@ namespace GitVersion.Commands;
 public record ConfigSettings : GitVersionSettings;
 
 [Command("config", "Manages the GitVersion configuration file.")]
-public class ConfigCommand : ICommand<ConfigSettings>
+public class ConfigCommand(ILogger logger, IService service) : ICommand<ConfigSettings>
 {
-    private readonly ILogger logger;
-    private readonly IService service;
+    private readonly ILogger logger = logger.NotNull();
+    private readonly IService service = service.NotNull();
 
-    public ConfigCommand(ILogger logger, IService service)
-    {
-        this.logger = logger;
-        this.service = service;
-    }
-
-    public Task<int> InvokeAsync(ConfigSettings settings)
+    public Task<int> InvokeAsync(ConfigSettings settings, CancellationToken cancellationToken = default)
     {
         var value = service.Call();
         logger.LogInformation($"Command : 'config', LogFile : '{settings.LogFile}', WorkDir : '{settings.WorkDir}' ");

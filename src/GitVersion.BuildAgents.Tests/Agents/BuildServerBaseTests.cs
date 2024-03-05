@@ -1,3 +1,4 @@
+using GitVersion.Configuration;
 using GitVersion.Core.Tests.Helpers;
 using GitVersion.Logging;
 using GitVersion.OutputVariables;
@@ -36,9 +37,7 @@ public class BuildServerBaseTests : TestBase
             }
         };
 
-        var configuration = new TestEffectiveConfiguration();
-
-        var variables = this.buildServer.GetVariablesFor(semanticVersion, configuration, null);
+        var variables = this.buildServer.GetVariablesFor(semanticVersion, EmptyConfigurationBuilder.New.Build(), 0);
         var buildAgent = this.sp.GetRequiredService<BuildAgent>();
         buildAgent.WriteIntegration(writes.Add, variables);
 
@@ -49,18 +48,14 @@ public class BuildServerBaseTests : TestBase
         writes.ShouldNotContain(x => x != null && x.StartsWith("Executing GenerateSetVersionMessage for "));
     }
 
-    private class BuildAgent : BuildAgentBase
+    private class BuildAgent(IEnvironment environment, ILog log) : BuildAgentBase(environment, log)
     {
         protected override string EnvironmentVariable => throw new NotImplementedException();
-
-        public BuildAgent(IEnvironment environment, ILog log) : base(environment, log)
-        {
-        }
 
         public override bool CanApplyToCurrentContext() => throw new NotImplementedException();
 
         public override string GenerateSetVersionMessage(GitVersionVariables variables) => variables.FullSemVer;
 
-        public override string[] GenerateSetParameterMessage(string name, string? value) => Array.Empty<string>();
+        public override string[] GenerateSetParameterMessage(string name, string? value) => [];
     }
 }

@@ -6,8 +6,8 @@ namespace GitVersion.Extensions;
 
 public static class StringExtensions
 {
-    private static readonly string[] Trues = { "1", "true" };
-    private static readonly string[] Falses = { "0", "false" };
+    private static readonly string[] Trues = ["1", "true"];
+    private static readonly string[] Falses = ["0", "false"];
 
     public static bool IsTrue(this string? value) => Trues.Contains(value, StringComparer.OrdinalIgnoreCase);
 
@@ -60,8 +60,6 @@ public static class StringExtensions
 
         return string.Equals(switchName, value, StringComparison.OrdinalIgnoreCase);
     }
-
-    public static bool IsInit(this string singleArgument) => singleArgument.Equals("init", StringComparison.OrdinalIgnoreCase);
 
     public static bool IsHelp(this string singleArgument) => (singleArgument == "?") || singleArgument.IsSwitch("h") || singleArgument.IsSwitch("help") || singleArgument.IsSwitch("?");
 

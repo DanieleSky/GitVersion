@@ -5,23 +5,20 @@ using GitVersion.OutputVariables;
 
 namespace GitVersion.Agents;
 
-internal class AzurePipelines : BuildAgentBase
+internal class AzurePipelines(IEnvironment environment, ILog log) : BuildAgentBase(environment, log)
 {
-    public AzurePipelines(IEnvironment environment, ILog log) : base(environment, log)
-    {
-    }
-
     public const string EnvironmentVariableName = "TF_BUILD";
 
     protected override string EnvironmentVariable => EnvironmentVariableName;
 
-    public override string[] GenerateSetParameterMessage(string name, string? value) => new[]
-    {
+    public override string[] GenerateSetParameterMessage(string name, string? value) =>
+    [
         $"##vso[task.setvariable variable=GitVersion.{name}]{value}",
         $"##vso[task.setvariable variable=GitVersion.{name};isOutput=true]{value}"
-    };
+    ];
 
-    public override string? GetCurrentBranch(bool usingDynamicRepos) => Environment.GetEnvironmentVariable("BUILD_SOURCEBRANCH");
+    public override string? GetCurrentBranch(bool usingDynamicRepos) => Environment.GetEnvironmentVariable("GIT_BRANCH")
+        ?? Environment.GetEnvironmentVariable("BUILD_SOURCEBRANCH");
 
     public override bool PreventFetch() => true;
 

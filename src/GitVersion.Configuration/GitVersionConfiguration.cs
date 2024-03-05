@@ -125,6 +125,14 @@ internal sealed record GitVersionConfiguration : BranchConfiguration, IGitVersio
     public SemanticVersionFormat SemanticVersionFormat { get; internal set; }
 
     [JsonIgnore]
+    VersionStrategies IGitVersionConfiguration.VersionStrategy => VersionStrategies.Length == 0
+        ? VersionCalculation.VersionStrategies.None : VersionStrategies.Aggregate((one, another) => one | another);
+
+    [JsonPropertyName("strategies")]
+    [JsonPropertyDescription($"Specifies which version strategies (one or more) will be used to determine the next version. Following values are available: 'ConfiguredNextVersion', 'MergeMessage', 'TaggedCommit', 'TrackReleaseBranches', 'VersionInBranchName' and 'TrunkBased'.")]
+    public VersionStrategies[] VersionStrategies { get; internal set; } = [];
+
+    [JsonIgnore]
     IReadOnlyDictionary<string, IBranchConfiguration> IGitVersionConfiguration.Branches
         => Branches.ToDictionary(element => element.Key, element => (IBranchConfiguration)element.Value);
 
@@ -149,4 +157,11 @@ internal sealed record GitVersionConfiguration : BranchConfiguration, IGitVersio
         stream.Flush();
         return stringBuilder.ToString();
     }
+
+    public IBranchConfiguration GetEmptyBranchConfiguration() => new BranchConfiguration
+    {
+        RegularExpression = string.Empty,
+        Label = ConfigurationConstants.BranchNamePlaceholder,
+        Increment = IncrementStrategy.Inherit
+    };
 }

@@ -6,29 +6,31 @@ internal class BranchConfigurationBuilder
 {
     public static BranchConfigurationBuilder New => new();
 
-    private VersioningMode? versioningMode;
+    private DeploymentMode? deploymentMode;
     private string? label;
     private IncrementStrategy increment;
-    private bool? preventIncrementOfMergedBranchVersion;
+    private bool? preventIncrementOfMergedBranch;
+    private bool? preventIncrementWhenBranchMerged;
+    private bool? preventIncrementWhenCurrentCommitTagged;
     private string? labelNumberPattern;
     private bool? trackMergeTarget;
     private bool? trackMergeMessage;
     private CommitMessageIncrementMode? commitMessageIncrementing;
     private string? regularExpression;
-    private HashSet<string> sourceBranches = new();
-    private HashSet<string> isSourceBranchFor = new();
+    private HashSet<string> sourceBranches = [];
+    private HashSet<string> isSourceBranchFor = [];
     private bool? tracksReleaseBranches;
     private bool? isReleaseBranch;
-    private bool? isMainline;
+    private bool? isMainBranch;
     private int? preReleaseWeight;
 
     private BranchConfigurationBuilder()
     {
     }
 
-    public virtual BranchConfigurationBuilder WithVersioningMode(VersioningMode? value)
+    public virtual BranchConfigurationBuilder WithDeploymentMode(DeploymentMode? value)
     {
-        this.versioningMode = value;
+        this.deploymentMode = value;
         return this;
     }
 
@@ -44,9 +46,21 @@ internal class BranchConfigurationBuilder
         return this;
     }
 
-    public virtual BranchConfigurationBuilder WithPreventIncrementOfMergedBranchVersion(bool? value)
+    public virtual BranchConfigurationBuilder WithPreventIncrementOfMergedBranch(bool? value)
     {
-        this.preventIncrementOfMergedBranchVersion = value;
+        this.preventIncrementOfMergedBranch = value;
+        return this;
+    }
+
+    public virtual BranchConfigurationBuilder WithPreventIncrementWhenBranchMerged(bool? value)
+    {
+        this.preventIncrementWhenBranchMerged = value;
+        return this;
+    }
+
+    public virtual BranchConfigurationBuilder WithPreventIncrementWhenCurrentCommitTagged(bool? value)
+    {
+        this.preventIncrementWhenCurrentCommitTagged = value;
         return this;
     }
 
@@ -88,7 +102,7 @@ internal class BranchConfigurationBuilder
 
     public virtual BranchConfigurationBuilder WithSourceBranches(params string[] values)
     {
-        this.sourceBranches = new HashSet<string>(values);
+        this.sourceBranches = [.. values];
         return this;
     }
 
@@ -100,7 +114,7 @@ internal class BranchConfigurationBuilder
 
     public virtual BranchConfigurationBuilder WithIsSourceBranchFor(params string[] values)
     {
-        this.isSourceBranchFor = new HashSet<string>(values);
+        this.isSourceBranchFor = [.. values];
         return this;
     }
 
@@ -116,9 +130,9 @@ internal class BranchConfigurationBuilder
         return this;
     }
 
-    public virtual BranchConfigurationBuilder WithIsMainline(bool? value)
+    public virtual BranchConfigurationBuilder WithIsMainBranch(bool? value)
     {
-        this.isMainline = value;
+        this.isMainBranch = value;
         return this;
     }
 
@@ -130,10 +144,12 @@ internal class BranchConfigurationBuilder
 
     public virtual BranchConfigurationBuilder WithConfiguration(IBranchConfiguration value)
     {
-        WithVersioningMode(value.VersioningMode);
+        WithDeploymentMode(value.DeploymentMode);
         WithLabel(value.Label);
         WithIncrement(value.Increment);
-        WithPreventIncrementOfMergedBranchVersion(value.PreventIncrementOfMergedBranchVersion);
+        WithPreventIncrementOfMergedBranch(value.PreventIncrement.OfMergedBranch);
+        WithPreventIncrementWhenBranchMerged(value.PreventIncrement.WhenBranchMerged);
+        WithPreventIncrementWhenCurrentCommitTagged(value.PreventIncrement.WhenCurrentCommitTagged);
         WithLabelNumberPattern(value.LabelNumberPattern);
         WithTrackMergeTarget(value.TrackMergeTarget);
         WithTrackMergeMessage(value.TrackMergeMessage);
@@ -141,7 +157,7 @@ internal class BranchConfigurationBuilder
         WithRegularExpression(value.RegularExpression);
         WithTracksReleaseBranches(value.TracksReleaseBranches);
         WithIsReleaseBranch(value.IsReleaseBranch);
-        WithIsMainline(value.IsMainline);
+        WithIsMainBranch(value.IsMainBranch);
         WithPreReleaseWeight(value.PreReleaseWeight);
         WithSourceBranches(value.SourceBranches);
         WithIsSourceBranchFor(value.IsSourceBranchFor);
@@ -150,7 +166,7 @@ internal class BranchConfigurationBuilder
 
     public IBranchConfiguration Build() => new BranchConfiguration
     {
-        VersioningMode = versioningMode,
+        DeploymentMode = deploymentMode,
         Label = label,
         Increment = increment,
         RegularExpression = regularExpression,
@@ -158,10 +174,15 @@ internal class BranchConfigurationBuilder
         TrackMergeTarget = trackMergeTarget,
         TrackMergeMessage = trackMergeMessage,
         CommitMessageIncrementing = commitMessageIncrementing,
-        IsMainline = isMainline,
+        IsMainBranch = isMainBranch,
         IsReleaseBranch = isReleaseBranch,
         LabelNumberPattern = labelNumberPattern,
-        PreventIncrementOfMergedBranchVersion = preventIncrementOfMergedBranchVersion,
+        PreventIncrement = new PreventIncrementConfiguration()
+        {
+            OfMergedBranch = preventIncrementOfMergedBranch,
+            WhenBranchMerged = preventIncrementWhenBranchMerged,
+            WhenCurrentCommitTagged = preventIncrementWhenCurrentCommitTagged
+        },
         PreReleaseWeight = preReleaseWeight,
         SourceBranches = sourceBranches,
         IsSourceBranchFor = isSourceBranchFor

@@ -1,63 +1,29 @@
-using System.Diagnostics.Contracts;
 using GitVersion.Common;
 using GitVersion.Logging;
 
 namespace GitVersion.VersionCalculation;
 
-internal sealed class ContinuousDeploymentVersionCalculator : NonTrunkBasedVersionCalculatorBase, IVersionModeCalculator
+internal sealed class ContinuousDeploymentVersionCalculator(ILog log, IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
+    : VersionCalculatorBase(log, repositoryStore, versionContext), IDeploymentModeCalculator
 {
-    public ContinuousDeploymentVersionCalculator(ILog log, IRepositoryStore repositoryStore, Lazy<GitVersionContext> versionContext)
-        : base(log, repositoryStore, versionContext)
-    {
-    }
-
-    public SemanticVersion Calculate(NextVersion nextVersion)
+    public SemanticVersion Calculate(SemanticVersion semanticVersion, ICommit? baseVersionSource)
     {
         using (this.log.IndentLog("Using continuous deployment workflow to calculate the incremented version."))
         {
-            if (nextVersion.Configuration.Label is not null)
-            {
-                throw new WarningException("Continuous deployment requires no pre-release tag.");
-            }
-            if (!nextVersion.Configuration.IsMainline)
-            {
-                throw new WarningException("Continuous deployment is only supported for mainline branches.");
-            }
-
-            return CalculateInternal(nextVersion);
+            return CalculateInternal(semanticVersion, baseVersionSource);
         }
     }
 
-    private SemanticVersion CalculateInternal(NextVersion nextVersion)
+    private SemanticVersion CalculateInternal(SemanticVersion semanticVersion, ICommit? baseVersionSource)
     {
-        if (ShouldTakeIncrementedVersion(nextVersion))
-        {
-            var semanticVersion = CalculateIncrementedVersion(nextVersion);
+        var buildMetaData = CreateVersionBuildMetaData(baseVersionSource);
 
-            Contract.Assume(semanticVersion.PreReleaseTag.Number.HasValue);
-            Contract.Assume(semanticVersion.BuildMetaData.CommitsSinceTag.HasValue);
-
-            return new SemanticVersion(semanticVersion)
-            {
-                PreReleaseTag = SemanticVersionPreReleaseTag.Empty,
-                BuildMetaData = new SemanticVersionBuildMetaData(semanticVersion.BuildMetaData)
-                {
-                    CommitsSinceVersionSource = semanticVersion.BuildMetaData.CommitsSinceTag.Value,
-                    CommitsSinceTag = null
-                }
-            };
-        }
-
-        var baseVersionBuildMetaData = CreateVersionBuildMetaData(nextVersion.BaseVersion.BaseVersionSource);
-
-        Contract.Assume(baseVersionBuildMetaData.CommitsSinceTag.HasValue);
-
-        return new SemanticVersion(nextVersion.BaseVersion.GetSemanticVersion())
+        return new SemanticVersion(semanticVersion)
         {
             PreReleaseTag = SemanticVersionPreReleaseTag.Empty,
-            BuildMetaData = new SemanticVersionBuildMetaData(baseVersionBuildMetaData)
+            BuildMetaData = new SemanticVersionBuildMetaData(buildMetaData)
             {
-                CommitsSinceVersionSource = baseVersionBuildMetaData.CommitsSinceTag.Value,
+                CommitsSinceVersionSource = buildMetaData.CommitsSinceTag!.Value,
                 CommitsSinceTag = null
             }
         };

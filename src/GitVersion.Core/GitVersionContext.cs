@@ -6,30 +6,23 @@ namespace GitVersion;
 /// <summary>
 /// Contextual information about where GitVersion is being run
 /// </summary>
-public class GitVersionContext
+public class GitVersionContext(
+    IBranch currentBranch,
+    ICommit currentCommit,
+    IGitVersionConfiguration configuration,
+    bool isCurrentCommitTagged,
+    int numberOfUncommittedChanges)
 {
     /// <summary>
     /// Contains the raw configuration, use Configuration for specific configuration based on the current GitVersion context.
     /// </summary>
-    public IGitVersionConfiguration Configuration { get; }
+    public IGitVersionConfiguration Configuration { get; } = configuration.NotNull();
 
-    public SemanticVersion? CurrentCommitTaggedVersion { get; }
+    public IBranch CurrentBranch { get; } = currentBranch.NotNull();
 
-    public IBranch CurrentBranch { get; }
+    public ICommit CurrentCommit { get; } = currentCommit.NotNull();
 
-    public ICommit CurrentCommit { get; }
+    public bool IsCurrentCommitTagged { get; } = isCurrentCommitTagged;
 
-    public bool IsCurrentCommitTagged => CurrentCommitTaggedVersion != null;
-
-    public int NumberOfUncommittedChanges { get; }
-
-    public GitVersionContext(IBranch currentBranch, ICommit currentCommit,
-        IGitVersionConfiguration configuration, SemanticVersion? currentCommitTaggedVersion, int numberOfUncommittedChanges)
-    {
-        CurrentBranch = currentBranch.NotNull();
-        CurrentCommit = currentCommit.NotNull();
-        Configuration = configuration.NotNull();
-        CurrentCommitTaggedVersion = currentCommitTaggedVersion;
-        NumberOfUncommittedChanges = numberOfUncommittedChanges;
-    }
+    public int NumberOfUncommittedChanges { get; } = numberOfUncommittedChanges;
 }

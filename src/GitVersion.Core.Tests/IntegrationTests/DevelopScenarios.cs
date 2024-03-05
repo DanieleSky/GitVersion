@@ -46,7 +46,7 @@ public class DevelopScenarios : TestBase
         using var fixture = new EmptyRepositoryFixture();
         fixture.MakeATaggedCommit("1.0.0");
         fixture.BranchTo("develop");
-        fixture.AssertFullSemver("1.0.0");
+        fixture.AssertFullSemver("1.1.0-alpha.0");
     }
 
     [Test]
@@ -106,7 +106,7 @@ public class DevelopScenarios : TestBase
     public void CanHandleContinuousDelivery()
     {
         var configuration = GitFlowConfigurationBuilder.New
-            .WithBranch("develop", builder => builder.WithVersioningMode(VersioningMode.ContinuousDelivery))
+            .WithBranch("develop", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
             .Build();
 
         using var fixture = new EmptyRepositoryFixture();
@@ -203,7 +203,7 @@ public class DevelopScenarios : TestBase
         fixture.Repository.MakeACommit();
         fixture.AssertFullSemver("1.2.1-beta.1+1");
         fixture.Repository.ApplyTag("1.2.1-beta.1");
-        fixture.AssertFullSemver("1.2.1-beta.1");
+        fixture.AssertFullSemver("1.2.1-beta.2+0");
         Commands.Checkout(fixture.Repository, "develop");
         fixture.Repository.MakeACommit();
         fixture.AssertFullSemver("1.3.0-alpha.2");
@@ -213,9 +213,9 @@ public class DevelopScenarios : TestBase
     public void CommitsSinceVersionSourceShouldNotGoDownUponGitFlowReleaseFinish()
     {
         var configuration = GitFlowConfigurationBuilder.New
-            .WithBranch("main", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
-            .WithBranch("develop", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
-            .WithBranch("release", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
+            .WithBranch("main", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
+            .WithBranch("develop", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
+            .WithBranch("release", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
             .Build();
 
         using var fixture = new EmptyRepositoryFixture();
@@ -255,9 +255,9 @@ public class DevelopScenarios : TestBase
     public void CommitsSinceVersionSourceShouldNotGoDownUponMergingFeatureOnlyToDevelop()
     {
         var configuration = GitFlowConfigurationBuilder.New
-            .WithBranch("main", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
-            .WithBranch("develop", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
-            .WithBranch("release", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
+            .WithBranch("main", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
+            .WithBranch("develop", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
+            .WithBranch("release", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
             .Build();
 
         using var fixture = new EmptyRepositoryFixture();
@@ -304,12 +304,12 @@ public class DevelopScenarios : TestBase
     public void WhenPreventIncrementOfMergedBranchVersionIsSetToFalseForDevelopCommitsSinceVersionSourceShouldNotGoDownWhenMergingReleaseToDevelop()
     {
         var configuration = GitFlowConfigurationBuilder.New
-            .WithBranch("main", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
+            .WithBranch("main", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
             .WithBranch("develop", builder => builder
-                .WithVersioningMode(VersioningMode.ContinuousDeployment)
-                .WithPreventIncrementOfMergedBranchVersion(false)
+                .WithDeploymentMode(DeploymentMode.ContinuousDelivery)
+                .WithPreventIncrementOfMergedBranch(false)
             )
-            .WithBranch("release", builder => builder.WithVersioningMode(VersioningMode.ContinuousDeployment))
+            .WithBranch("release", builder => builder.WithDeploymentMode(DeploymentMode.ContinuousDelivery))
             .Build();
 
         using var fixture = new EmptyRepositoryFixture();
@@ -349,8 +349,8 @@ public class DevelopScenarios : TestBase
     public void WhenPreventIncrementOfMergedBranchVersionIsSetToTrueForDevelopCommitsSinceVersionSourceShouldNotGoDownWhenMergingReleaseToDevelop()
     {
         var configuration = GitFlowConfigurationBuilder.New
-            .WithVersioningMode(VersioningMode.ContinuousDeployment)
-            .WithBranch("develop", builder => builder.WithPreventIncrementOfMergedBranchVersion(true))
+            .WithDeploymentMode(DeploymentMode.ContinuousDelivery)
+            .WithBranch("develop", builder => builder.WithPreventIncrementOfMergedBranch(true))
             .Build();
 
         using var fixture = new EmptyRepositoryFixture();
@@ -391,10 +391,10 @@ public class DevelopScenarios : TestBase
     {
         var configuration = GitFlowConfigurationBuilder.New
             .WithBranch("develop", builder => builder
-                .WithPreventIncrementOfMergedBranchVersion(false)
+                .WithPreventIncrementOfMergedBranch(false)
             )
             .WithBranch("hotfix", builder => builder
-                .WithPreventIncrementOfMergedBranchVersion(true)
+                .WithPreventIncrementOfMergedBranch(true)
                 .WithRegularExpression("^(origin/)?hotfix[/-]")
             )
             .Build();
@@ -515,7 +515,7 @@ public class DevelopScenarios : TestBase
         fixture.ApplyTag("1.0.0-beta.1");
 
         // ✅ succeeds as expected
-        fixture.AssertFullSemver("1.0.0-beta.1", configurationBuilder.Build());
+        fixture.AssertFullSemver("1.0.0-beta.2+0", configurationBuilder.Build());
 
         // continue with more work on develop that may or may not end up in the 1.0.0 release
         fixture.Checkout("develop");

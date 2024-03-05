@@ -27,7 +27,7 @@ public class ProjectFileUpdaterTests : TestBase
         ShouldlyConfiguration.ShouldMatchApprovedDefaults.LocateTestMethodUsingAttribute<TestCaseAttribute>();
         var sp = ConfigureServices();
 
-        this.logMessages = new List<string>();
+        this.logMessages = [];
         this.log = new Log(new TestLogAppender(this.logMessages.Add));
 
         this.fileSystem = sp.GetRequiredService<IFileSystem>();
@@ -144,7 +144,7 @@ public class ProjectFileUpdaterTests : TestBase
     public void UpdateProjectXmlVersionElementWithStandardXmlInsertsElement(string xml)
     {
         var variables = this.variableProvider.GetVariablesFor(
-            SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), new TestEffectiveConfiguration(), null
+            SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), EmptyConfigurationBuilder.New.Build(), 0
         );
         var xmlRoot = XElement.Parse(xml);
         variables.AssemblySemVer.ShouldNotBeNull();
@@ -172,7 +172,7 @@ public class ProjectFileUpdaterTests : TestBase
     )]
     public void UpdateProjectXmlVersionElementWithStandardXmlModifiesElement(string xml)
     {
-        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), new TestEffectiveConfiguration(), null);
+        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), EmptyConfigurationBuilder.New.Build(), 0);
         var xmlRoot = XElement.Parse(xml);
         variables.AssemblySemVer.ShouldNotBeNull();
         ProjectFileUpdater.UpdateProjectVersionElement(xmlRoot, ProjectFileUpdater.AssemblyVersionElement, variables.AssemblySemVer);
@@ -202,7 +202,7 @@ public class ProjectFileUpdaterTests : TestBase
     )]
     public void UpdateProjectXmlVersionElementWithDuplicatePropertyGroupsModifiesLastElement(string xml)
     {
-        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), new TestEffectiveConfiguration(), null);
+        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), EmptyConfigurationBuilder.New.Build(), 0);
         var xmlRoot = XElement.Parse(xml);
         variables.AssemblySemVer.ShouldNotBeNull();
         ProjectFileUpdater.UpdateProjectVersionElement(xmlRoot, ProjectFileUpdater.AssemblyVersionElement, variables.AssemblySemVer);
@@ -233,7 +233,7 @@ public class ProjectFileUpdaterTests : TestBase
     )]
     public void UpdateProjectXmlVersionElementWithMultipleVersionElementsLastOneIsModified(string xml)
     {
-        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), new TestEffectiveConfiguration(), null);
+        var variables = this.variableProvider.GetVariablesFor(SemanticVersion.Parse("2.0.0", ConfigurationConstants.DefaultTagPrefix), EmptyConfigurationBuilder.New.Build(), 0);
         var xmlRoot = XElement.Parse(xml);
         variables.AssemblySemVer.ShouldNotBeNull();
         ProjectFileUpdater.UpdateProjectVersionElement(xmlRoot, ProjectFileUpdater.AssemblyVersionElement, variables.AssemblySemVer);
@@ -264,7 +264,7 @@ public class ProjectFileUpdaterTests : TestBase
         VerifyAssemblyInfoFile(xml, fileName, AssemblyVersioningScheme.MajorMinorPatch, (fs, variables) =>
         {
             using var projFileUpdater = new ProjectFileUpdater(this.log, fs);
-            projFileUpdater.Execute(variables, new AssemblyInfoContext(Path.GetTempPath(), false, fileName));
+            projFileUpdater.Execute(variables, new(Path.GetTempPath(), false, fileName));
 
             const string expectedXml = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
@@ -291,7 +291,7 @@ public class ProjectFileUpdaterTests : TestBase
         this.fileSystem = Substitute.For<IFileSystem>();
         var version = new SemanticVersion
         {
-            BuildMetaData = new SemanticVersionBuildMetaData("versionSourceHash", 3, "foo", "hash", "shortHash", DateTimeOffset.Now, 0),
+            BuildMetaData = new("versionSourceHash", 3, "foo", "hash", "shortHash", DateTimeOffset.Now, 0),
             Major = 2,
             Minor = 3,
             Patch = 1
@@ -305,8 +305,8 @@ public class ProjectFileUpdaterTests : TestBase
             this.fileSystem.ReadAllText(fileName).Returns(projectFileContent);
         });
 
-        var configuration = new TestEffectiveConfiguration(versioningScheme);
-        var variables = this.variableProvider.GetVariablesFor(version, configuration, null);
+        var configuration = EmptyConfigurationBuilder.New.WithAssemblyVersioningScheme(versioningScheme).Build();
+        var variables = this.variableProvider.GetVariablesFor(version, configuration, 0);
 
         verify?.Invoke(this.fileSystem, variables);
     }

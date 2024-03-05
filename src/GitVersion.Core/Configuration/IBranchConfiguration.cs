@@ -5,13 +5,13 @@ namespace GitVersion.Configuration;
 
 public interface IBranchConfiguration
 {
-    VersioningMode? VersioningMode { get; }
+    DeploymentMode? DeploymentMode { get; }
 
     string? Label { get; }
 
     IncrementStrategy Increment { get; }
 
-    bool? PreventIncrementOfMergedBranchVersion { get; }
+    IPreventIncrementConfiguration PreventIncrement { get; }
 
     string? LabelNumberPattern { get; }
 
@@ -30,15 +30,13 @@ public interface IBranchConfiguration
 
     bool? IsReleaseBranch { get; }
 
-    bool? IsMainline { get; }
+    bool? IsMainBranch { get; }
 
     int? PreReleaseWeight { get; }
 
     IReadOnlyCollection<string> SourceBranches { get; }
 
     IReadOnlyCollection<string> IsSourceBranchFor { get; }
-
-    IBranchConfiguration Empty();
 
     IBranchConfiguration Inherit(IBranchConfiguration configuration);
 }

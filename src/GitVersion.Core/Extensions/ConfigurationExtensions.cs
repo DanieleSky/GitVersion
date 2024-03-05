@@ -24,7 +24,7 @@ public static class ConfigurationExtensions
     public static IBranchConfiguration GetBranchConfiguration(this IGitVersionConfiguration configuration, ReferenceName branchName)
     {
         var branchConfiguration = GetBranchConfigurations(configuration, branchName.WithoutOrigin).FirstOrDefault();
-        branchConfiguration ??= configuration.Empty();
+        branchConfiguration ??= configuration.GetEmptyBranchConfiguration();
         return branchConfiguration;
     }
 
@@ -32,7 +32,7 @@ public static class ConfigurationExtensions
     {
         source.NotNull();
 
-        if (source.Shas.Any()) yield return new ShaVersionFilter(source.Shas);
+        if (source.Shas.Count != 0) yield return new ShaVersionFilter(source.Shas);
         if (source.Before.HasValue) yield return new MinDateVersionFilter(source.Before.Value);
     }
 
