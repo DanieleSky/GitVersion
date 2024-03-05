@@ -44,7 +44,6 @@ public class TagCheckoutInBuildAgentTests
         await VerifyTagCheckoutVersionIsCalculatedProperly(env);
     }
 
-
     private static async Task VerifyTagCheckoutVersionIsCalculatedProperly(Dictionary<string, string> env)
     {
         using var fixture = new EmptyRepositoryFixture("main");
