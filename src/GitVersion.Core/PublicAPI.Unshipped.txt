@@ -309,6 +309,7 @@ GitVersion.IConverterContext
 GitVersion.IConverterContext.WorkingDirectory.get -> string!
 GitVersion.IEnvironment
 GitVersion.IEnvironment.GetEnvironmentVariable(string! variableName) -> string?
+GitVersion.IEnvironment.GetEnvironmentVariable(string! variableName, System.EnvironmentVariableTarget target) -> string?
 GitVersion.IEnvironment.SetEnvironmentVariable(string! variableName, string? value) -> void
 GitVersion.IFileSystem
 GitVersion.IFileSystem.Copy(string! from, string! to, bool overwrite) -> void

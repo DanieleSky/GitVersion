@@ -15,7 +15,7 @@ public abstract class BuildAgentBase(IEnvironment environment, ILog log) : ICurr
     public abstract string? GenerateSetVersionMessage(GitVersionVariables variables);
     public abstract string[] GenerateSetParameterMessage(string name, string? value);
 
-    public virtual bool CanApplyToCurrentContext() => !Environment.GetEnvironmentVariable(EnvironmentVariable).IsNullOrEmpty();
+    public virtual bool CanApplyToCurrentContext() => !Environment.GetEnvironmentVariable(EnvironmentVariable, EnvironmentVariableTarget.Process).IsNullOrEmpty();
 
     public virtual string? GetCurrentBranch(bool usingDynamicRepos) => null;
 

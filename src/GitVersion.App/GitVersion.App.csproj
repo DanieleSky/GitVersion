@@ -4,6 +4,7 @@
         <OutputType>Exe</OutputType>
         <RootNamespace>GitVersion</RootNamespace>
         <AssemblyName>gitversion</AssemblyName>
+        <PackAsTool>true</PackAsTool>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
